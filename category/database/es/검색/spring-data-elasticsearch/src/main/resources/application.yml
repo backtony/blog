@@ -1,0 +1,13 @@
+elastic-search:
+  uris: localhost:9200
+  username: elastic
+  password: changeme
+  connect-timeout: 3000
+  connection-request-timeout: 5000
+  socket-timeout: 5000
+
+
+logging:
+  level:
+    tracer: TRACE
+
