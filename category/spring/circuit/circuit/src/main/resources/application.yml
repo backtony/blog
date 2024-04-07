@@ -1,0 +1,25 @@
+# @CircuitBreaker name에 지정된 서킷브레이커가 없으면 default 설정을 가져온 해당 이름의 서킷브레이커를 만든다.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        minimum-number-of-calls: 5   # 집계에 필요한 최소 호출 수
+        sliding-window-size: 5   # 서킷 CLOSE 상태에서 N회 호출 도달 시 failureRateThreshold 실패 비율 계산
+        failure-rate-threshold: 10   # 실패 10% 이상 시 서킷 오픈
+        slow-call-duration-threshold: 500   # 500ms 이상 소요 시 실패로 간주
+        slow-call-rate-threshold: 10   # slowCallDurationThreshold 초과 비율이 10% 이상 시 서킷 오픈
+        wait-duration-in-open-state: 10000   # OPEN -> HALF-OPEN 전환 전 기다리는 시간
+        permitted-number-of-calls-in-half-open-state: 5   # HALFOPEN -> CLOSE or OPEN 으로 판단하기 위해 호출 횟수
+        registerHealthIndicator: true # actuator 에서 상태 확인 가능, http://localhost:8080/actuator/circuitbreakers
+
+
+server:
+  port: 7070
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - "*" # 테스트를 위해 actuator 전체 노출
+
