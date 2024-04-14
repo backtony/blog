@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.team";
+
+import "google/protobuf/timestamp.proto";
+
+package team;
+
+service TeamHandler {
+    rpc createTeam(CreateTeamRequest) returns (TeamResponse);
+}
+
+message CreateTeamRequest{
+    string name = 1;
+    string requestedBy = 2;
+}
+
+message TeamResponse {
+    int64 id = 1;
+    string name = 2;
+    string registeredBy = 3;
+    google.protobuf.Timestamp registeredDate = 4;
+    string modifiedBy = 5;
+    google.protobuf.Timestamp modifiedDate = 6;
+}

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.member";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+package member;
+
+service MemberHandler {
+    rpc createMember(CreateMemberRequest) returns (MemberResponse);
+    rpc getMembersByTeamId(TeamId) returns (MemberListResponse);
+}
+
+message CreateMemberRequest {
+    string name = 1;
+    google.protobuf.StringValue introduction = 2;
+    Country country = 3;
+    Type type = 4;
+    google.protobuf.Int64Value teamId = 5;
+    string requestedBy = 6;
+}
+
+enum Type {
+    UNKNOWN_TYPE = 0;
+    INDIVIDUAL = 1;
+    COMPANY = 2;
+}
+
+enum Country {
+    UNKNOWN_COUNTRY = 0;
+    KR = 1;
+    US = 2;
+    JP = 3;
+}
+
+message MemberResponse {
+    int64 id = 1;
+    string name = 2;
+    google.protobuf.StringValue introduction = 3;
+    Type type = 4;
+    Country country = 5;
+    google.protobuf.Int64Value teamId = 6;
+    string registeredBy = 7;
+    google.protobuf.Timestamp registeredDate = 8;
+    string modifiedBy = 9;
+    google.protobuf.Timestamp modifiedDate = 10;
+}
+
+message TeamId {
+    int64 id = 1;
+}
+
+message MemberListResponse {
+    repeated MemberResponse member = 1;
+}

@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: rest-client
+
+server:
+  port: 7070
+
+grpc:
+  endpoint: gproto+http://localhost:8080
