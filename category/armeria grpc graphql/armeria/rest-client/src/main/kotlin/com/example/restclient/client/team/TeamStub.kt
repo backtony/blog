@@ -12,6 +12,6 @@ class TeamStub(
 
     @Bean
     fun teamServiceStub(): TeamHandlerGrpcKt.TeamHandlerCoroutineStub {
-        return stubFactory.createStub(TeamHandlerGrpcKt.TeamHandlerCoroutineStub::class.java)
+        return stubFactory.createStub(TeamHandlerGrpcKt.TeamHandlerCoroutineStub::class)
     }
 }

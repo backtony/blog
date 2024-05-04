@@ -1,0 +1,24 @@
+server:
+  shutdown: graceful
+
+spring:
+  application:
+    name: consumer
+  kafka:
+    bootstrap-servers: http://localhost:19092
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      # 참고 : https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/
+      # 모든 로그를 샘플링
+      probability: 1.0
+    # https://github.com/openzipkin/b3-propagation#multiple-headers
+    # single은 단일, multi는 여러개 헤더로
+    propagation:
+      type: B3
+
+zipkin:
+  endpoint: http://localhost:19092
+  messageTimeout: 1

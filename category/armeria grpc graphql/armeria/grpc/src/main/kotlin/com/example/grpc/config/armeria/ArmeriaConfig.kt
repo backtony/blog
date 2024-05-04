@@ -1,15 +1,21 @@
-package com.example.grpc.config
+package com.example.grpc.config.armeria
 
+import brave.Tracing
+import com.example.grpc.GrpcApplication
 import com.example.grpc.interceptor.GlobalExceptionInterceptor
 import com.example.grpc.interceptor.SimpleLoggingInterceptor
+import com.linecorp.armeria.server.brave.BraveService
 import com.linecorp.armeria.server.docs.DocService
 import com.linecorp.armeria.server.grpc.GrpcService
 import com.linecorp.armeria.server.logging.LoggingService
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator
 import io.asyncer.r2dbc.mysql.client.Client.logger
 import io.grpc.kotlin.AbstractCoroutineServerImpl
+import io.netty.handler.ssl.ClientAuth
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 
 @Configuration
 class ArmeriaConfig {
@@ -33,8 +39,9 @@ class ArmeriaConfig {
     @Bean
     fun armeriaServerConfigurator(
         grpcService: GrpcService,
+        tracing: Tracing
     ): ArmeriaServerConfigurator {
-        // TODO serverBuilder에 들어가보면 server 관련 옵션들을 추가할 수 있음.
+        // serverBuilder에 들어가보면 server 관련 옵션들을 추가할 수 있음.
         return ArmeriaServerConfigurator {
 
             /**
@@ -43,9 +50,9 @@ class ArmeriaConfig {
             it.maxRequestLength(32 * 1024 * 1024)
 
             /**
-             * Grpc 사용을 위한 서비스 등록
+             * Grpc 사용을 위한 서비스 등록 + zipkin 연동
              */
-            it.service(grpcService)
+            it.service(grpcService, BraveService.newDecorator(tracing))
 
             /**
              * Docs 생성을 위한 서비스 등록
@@ -63,6 +70,28 @@ class ArmeriaConfig {
 //                .failureResponseLogLevel(LogLevel.ERROR)  // 실패 응답 로그 레벨 설정
 //                .newDecorator()
 //            )
+
+            /**
+             * mTLS 적용
+             * https://github.com/grpc/grpc-java/blob/master/examples/example-tls/src/main/java/io/grpc/examples/helloworldtls/HelloWorldServerTls.java
+             */
+            val serverCertInputStream = GrpcApplication::class.java.classLoader.getResourceAsStream("tls/server.crt")!!
+            val serverKeyInputStream = GrpcApplication::class.java.classLoader.getResourceAsStream("tls/server.key")!!
+            val caCertInputStream = GrpcApplication::class.java.classLoader.getResourceAsStream("tls/ca.crt")!!
+
+            it.https(8443)
+            serverCertInputStream.use { serverCertStream ->
+                serverKeyInputStream.use { serverKeyStream ->
+                    it.tls(serverCertStream, serverKeyStream)
+                }
+            }
+            it.tlsCustomizer { builder ->
+                caCertInputStream.use { caCertStream ->
+                    val caCert = CertificateFactory.getInstance("X.509").generateCertificate(caCertStream) as X509Certificate
+                    builder.trustManager(caCert)
+                }
+                builder.clientAuth(ClientAuth.REQUIRE)
+            }
         }
     }
 }

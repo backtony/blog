@@ -1,11 +1,13 @@
 package com.example.restclient.factory
 
 import com.example.restclient.config.GrpcProperties
-import com.example.restclient.interceptor.LoggingInterceptor
-import com.linecorp.armeria.client.ClientFactory
-import com.linecorp.armeria.client.grpc.GrpcClients
+import com.example.restclient.interceptor.TimeoutInterceptor
+import io.grpc.CallOptions
+import io.grpc.ManagedChannel
+import io.grpc.kotlin.AbstractCoroutineStub
 import org.springframework.stereotype.Component
-import java.time.Duration
+import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 
 /**
  * https://armeria.dev/docs/client-grpc/
@@ -13,24 +15,19 @@ import java.time.Duration
 @Component
 class StubFactory(
     private val grpcProperties: GrpcProperties,
+    private val grpcChannel: ManagedChannel,
 ) {
 
-    fun <T> createStub(clientType: Class<T & Any>, responseTimeoutMillis: Long = 3000, maxResponseLength: Long = 10485760): T {
-
-        return GrpcClients.builder(grpcProperties.endpoint)
-            .responseTimeoutMillis(responseTimeoutMillis)
-            .maxResponseLength(maxResponseLength)
-            .factory(
-                ClientFactory.builder()
-                    .apply {
-                        // Increase the connect timeout from 3.2s to 5s.
-                        connectTimeout(Duration.ofSeconds(5))
-                        // Shorten the idle connection timeout from 10s to 5s.
-                        idleTimeout(Duration.ofSeconds(5))
-                    }
-                    .build(),
-            )
-            .intercept(LoggingInterceptor())
-            .build(clientType)
+    /**
+     * withDeadlineAfter를 적용하거나 callOption으로 deadline을 적용하고 빈으로 등록하는 경우 빈 등록 시점부터 카운트가 들어가므로
+     * timeout옵션은 interceptor로 부여하거나 사용처마다 withDeadlineAfter를 별도로 정의하고 사용해야 한다.
+     */
+    fun <T> createStub(
+        stubClass: KClass<T>,
+        timeout: Long = grpcProperties.timeout,
+    ): T where T : AbstractCoroutineStub<T> {
+        val constructor = stubClass.primaryConstructor!!
+        return constructor.call(grpcChannel, CallOptions.DEFAULT)
+            .withInterceptors(TimeoutInterceptor(timeout))
     }
 }

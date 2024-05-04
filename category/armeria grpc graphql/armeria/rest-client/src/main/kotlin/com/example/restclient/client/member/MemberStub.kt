@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class MemberStub(
-    private val stubFactory: StubFactory,
+    private val stubFactory: StubFactory
 ) {
 
     @Bean
     fun memberServiceStub(): MemberHandlerGrpcKt.MemberHandlerCoroutineStub {
-        return stubFactory.createStub(MemberHandlerGrpcKt.MemberHandlerCoroutineStub::class.java)
+        return stubFactory.createStub(MemberHandlerGrpcKt.MemberHandlerCoroutineStub::class)
     }
 }

@@ -1,0 +1,34 @@
+# https://github.com/openzipkin/zipkin/blob/master/docker/examples/docker-compose-elasticsearch.yml
+# https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md
+
+# docker-compose -f docker-compose.yml up
+
+version: '3.7'
+
+services:
+  storage:
+    image: ghcr.io/openzipkin/zipkin-elasticsearch8:${TAG:-latest}
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+
+  kafka:
+    image: ghcr.io/openzipkin/zipkin-kafka:${TAG:-latest}
+    container_name: kafka
+    ports:
+      - 19092:19092
+
+  zipkin:
+    image: ghcr.io/openzipkin/zipkin:${TAG:-latest}
+    container_name: zipkin
+    ports:
+      - 9411:9411
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=elasticsearch:9200
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      storage:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy

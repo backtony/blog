@@ -1,7 +1,9 @@
 package com.example.grpc.service.member
 
+import com.example.event.member.MemberCreatedEvent
 import com.example.grpc.domain.Member
 import com.example.grpc.repository.MemberRepository
+import com.example.grpc.service.event.TransactionalDomainEventPublisher
 import com.example.grpc.service.member.dto.MemberDto
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -9,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class MemberService(
     private val memberRepository: MemberRepository,
+    private val producer: TransactionalDomainEventPublisher,
 ) {
 
     @Transactional
@@ -25,7 +28,9 @@ class MemberService(
                 modifiedBy = requestedBy,
             )
         }
+
         return memberRepository.save(member)
+            .also { producer.publishEvent(MemberCreatedEvent(it.id!!)) }
     }
 
     @Transactional(readOnly = true)

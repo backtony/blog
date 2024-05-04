@@ -1,6 +1,6 @@
 package com.example.grpc.handler.team
 
-import com.example.grpc.config.GrpcHandler
+import com.example.grpc.config.armeria.GrpcHandler
 import com.example.grpc.service.team.TeamService
 import com.example.proto.team.CreateTeamRequest
 import com.example.proto.team.TeamHandlerGrpcKt

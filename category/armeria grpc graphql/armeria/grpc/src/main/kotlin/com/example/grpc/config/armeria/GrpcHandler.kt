@@ -1,4 +1,4 @@
-package com.example.grpc.config
+package com.example.grpc.config.armeria
 
 import org.springframework.stereotype.Component
 

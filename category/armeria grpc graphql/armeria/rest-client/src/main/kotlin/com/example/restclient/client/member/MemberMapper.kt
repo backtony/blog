@@ -13,7 +13,6 @@ import com.example.restclient.controller.member.dto.MemberDto
 import com.example.restclient.utils.toLocalDateTime
 import com.google.protobuf.Int64Value
 import com.google.protobuf.StringValue
-import com.linecorp.armeria.internal.shaded.bouncycastle.asn1.x500.style.RFC4519Style.name
 
 object MemberMapper {
 
@@ -55,7 +54,7 @@ object MemberMapper {
 
     fun generateMemberListResponse(response: MemberListResponse): MemberDto.MemberListResponse {
         return MemberDto.MemberListResponse(
-            members = response.memberList.map { generateMemberResponse(it) }
+            members = response.memberList.map { generateMemberResponse(it) },
         )
     }
 }
