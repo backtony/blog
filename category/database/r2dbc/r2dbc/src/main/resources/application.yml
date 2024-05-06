@@ -1,0 +1,30 @@
+server:
+  shutdown: graceful
+
+spring:
+  application:
+    name: r2dbc
+
+  # https://github.com/asyncer-io/r2dbc-mysql/wiki/getting-started
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/r2dbc
+    username: root
+    password: root
+    properties:
+      serverZoneId: Asia/Seoul
+      # Duration.parse 를 사용하므로 3s 형식으로 넣으면 예외가 발생
+      # MySqlConnectionFactoryProvider#setup 메서드 참고
+      connectTimeout: PT3S
+    # https://github.com/r2dbc/r2dbc-pool
+    # https://javadoc.io/doc/io.r2dbc/r2dbc-pool/0.9.0.M1/io/r2dbc/pool/ConnectionPoolConfiguration.Builder.html
+    pool:
+      initial-size: 10
+      max-size: 10
+      max-life-time: 30m
+      max-create-connection-time: 3s
+
+# https://github.com/asyncer-io/r2dbc-mysql/wiki/logging-statements
+logging:
+  level:
+    io.asyncer.r2dbc.mysql: INFO
+    io.asyncer.r2dbc.mysql.QUERY: DEBUG
