@@ -521,29 +521,16 @@ class Member(
 만약 도메인의 teamProvider에 DB를 조회하는 로직이 있다면, teamProvider를 호출할 때마다 db 조회 쿼리가 발생합니다. 이를 방지하기 위해 한번이라도 teamProvider가 사용된 경우 캐시해서 항상 동일한 값을 반환하도록 하는 추가적인 작업이 필요할 수 있습니다.
 
 ```kotlin
-class AsyncLazy<T>(private val initializer: suspend () -> T?) {
-    private var value: T? = null
-    private var initialized = false
+fun <R> memoizeSuspendNullable(func: suspend () -> R?): (suspend () -> R?) {
+    var initialized = false
+    var result: R? = null
 
-    suspend fun get(): T? {
+    return {
         if (!initialized) {
-            value = initializer()
+            result = func()
             initialized = true
         }
-        return value
-    }
-}
-
-class AsyncListLazy<T>(private val initializer: suspend () -> List<T>) {
-    private var value: List<T> = emptyList()
-    private var initialized = false
-
-    suspend fun get(): List<T> {
-        if (!initialized) {
-            value = initializer()
-            initialized = true
-        }
-        return value
+        result
     }
 }
 ```
@@ -558,13 +545,12 @@ class Member(
     val registeredDate: LocalDateTime = LocalDateTime.now(),
     modifiedBy: String,
     val modifiedDate: LocalDateTime = LocalDateTime.now(),
-    private val teamProvider: suspend () -> Team? = { null },
+    teamProvider: suspend () -> Team? = { null },
 ) {
-    private val cachedTeam = AsyncLazy { teamProvider() }
-    suspend fun getTeam() = cachedTeam.get()
+    val getTeam = memoizeSuspendNullable { teamProvider() }
 }
 ```
-AsyncLazy 클래스를 사용하여 한 번이라도 provider가 호출된 경우 값을 저장해두고, 이후의 반환부터는 그대로 사용하도록 할 수 있습니다. 해당 값은 teamId가 변경되어도 그대로 고정되기 때문에 만약 teamId가 수정된다면 한번 save하고 사용해야 한다는 점을 주의해야 합니다.
+memoizeSuspendNullable를 사용하여 한 번이라도 호출된 값은 저장해두고, 이후의 반환부터는 이전에 조회했던 것을 그대로 사용하도록 할 수 있습니다. 해당 값은 teamId가 변경되어도 그대로 고정되기 때문에 만약 teamId가 수정된다면 한번 save하고 사용해야 한다는 점을 주의해야 합니다.
 
 
 

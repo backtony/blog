@@ -1,6 +1,6 @@
 package com.example.r2dbc.domain
 
-import com.example.r2dbc.utils.AsyncLazy
+import com.example.r2dbc.utils.memoizeSuspendNullable
 import java.time.LocalDateTime
 
 class Member(
@@ -13,10 +13,8 @@ class Member(
     val registeredDate: LocalDateTime = LocalDateTime.now(),
     modifiedBy: String,
     val modifiedDate: LocalDateTime = LocalDateTime.now(),
-    private val teamProvider: suspend () -> Team? = { null },
+    teamProvider: suspend () -> Team? = { null },
 ) {
-    private val cachedTeam = AsyncLazy { teamProvider() }
-
     var teamId: Long? = teamId
         private set
 
@@ -26,7 +24,7 @@ class Member(
     var modifiedBy: String = modifiedBy
         private set
 
-    suspend fun getTeam() = cachedTeam.get()
+    val getTeam = memoizeSuspendNullable { teamProvider() }
 
     fun update(teamId: Long?, introduction: String?, requestedBy: String) {
         this.teamId = teamId
