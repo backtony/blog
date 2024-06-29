@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository
 interface MemberRepository : CoroutineCrudRepository<Member, Long> {
 
     suspend fun findAllByTeamId(teamId: Long): List<Member>
+
+    suspend fun findAllByTeamIdIn(teamIds: List<Long>): List<Member>
 }

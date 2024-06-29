@@ -17,9 +17,4 @@ class MemberController(
     suspend fun createMember(@RequestBody request: MemberDto.CreateMemberRequest): MemberDto.MemberResponse {
         return memberService.createMember(request)
     }
-
-    @GetMapping("/members")
-    suspend fun getMembersByTeamId(@RequestParam teamId: Long): MemberDto.MemberListResponse {
-        return memberService.getMembersByTeamId(teamId)
-    }
 }

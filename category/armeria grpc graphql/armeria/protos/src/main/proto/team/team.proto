@@ -4,11 +4,14 @@ option java_multiple_files = true;
 option java_package = "com.example.proto.team";
 
 import "google/protobuf/timestamp.proto";
+import "common/common.proto";
 
 package team;
 
 service TeamHandler {
     rpc createTeam(CreateTeamRequest) returns (TeamResponse);
+    rpc getTeam(common.IdRequest) returns (TeamResponse);
+    rpc getTeams(common.IdsRequest) returns (TeamListResponse);
 }
 
 message CreateTeamRequest{
@@ -23,4 +26,8 @@ message TeamResponse {
     google.protobuf.Timestamp registeredDate = 4;
     string modifiedBy = 5;
     google.protobuf.Timestamp modifiedDate = 6;
+}
+
+message TeamListResponse {
+    repeated TeamResponse team = 1;
 }

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.proto.common";
+
+package common;
+
+message IdRequest {
+    int64 id = 1;
+}
+
+message IdsRequest {
+    repeated int64 id = 1;
+}

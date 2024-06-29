@@ -1,0 +1,15 @@
+query team($id: Long!) {
+    team(id: $id) {
+        id
+        name
+        registeredBy
+        registeredDate
+        modifiedBy
+        modifiedDate
+    }
+}
+
+#variables
+#{
+#  "id": 2
+#}

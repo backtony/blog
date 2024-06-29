@@ -34,7 +34,12 @@ class MemberService(
     }
 
     @Transactional(readOnly = true)
-    suspend fun getMembersByTeamId(teamId: Long): List<Member> {
-        return memberRepository.findAllByTeamId(teamId)
+    suspend fun getMember(id: Long): Member {
+        return memberRepository.findById(id) ?: throw RuntimeException("member not found by id. id : $id")
+    }
+
+    @Transactional(readOnly = true)
+    suspend fun getMembersByTeamIds(idList: List<Long>): List<Member> {
+        return memberRepository.findAllByTeamIdIn(idList)
     }
 }

@@ -4,7 +4,9 @@ import com.example.grpc.domain.Team
 import com.example.grpc.service.team.dto.TeamDto
 import com.example.grpc.utils.toTimestamp
 import com.example.proto.team.CreateTeamRequest
+import com.example.proto.team.TeamListResponse
 import com.example.proto.team.TeamResponse
+import com.example.proto.team.teamListResponse
 import com.example.proto.team.teamResponse
 
 object TeamMapper {
@@ -28,6 +30,14 @@ object TeamMapper {
             registeredDate = team.registeredDate.toTimestamp()
             modifiedBy = team.modifiedBy
             modifiedDate = team.modifiedDate.toTimestamp()
+        }
+    }
+
+    fun generateTeamListResponse(teams: List<Team>): TeamListResponse {
+        return teamListResponse {
+            team.addAll(
+                teams.map { generateTeamResponse(it) },
+            )
         }
     }
 }

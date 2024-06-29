@@ -4,7 +4,6 @@ import com.example.proto.member.Country
 import com.example.proto.member.CreateMemberRequest
 import com.example.proto.member.MemberListResponse
 import com.example.proto.member.MemberResponse
-import com.example.proto.member.TeamId
 import com.example.proto.member.Type
 import com.example.proto.member.createMemberRequest
 import com.example.proto.member.introductionOrNull
@@ -44,12 +43,6 @@ object MemberMapper {
             modifiedBy = response.modifiedBy,
             modifiedDate = response.modifiedDate.toLocalDateTime(),
         )
-    }
-
-    fun generateTeamId(teamId: Long): TeamId {
-        return com.example.proto.member.teamId {
-            id = teamId
-        }
     }
 
     fun generateMemberListResponse(response: MemberListResponse): MemberDto.MemberListResponse {

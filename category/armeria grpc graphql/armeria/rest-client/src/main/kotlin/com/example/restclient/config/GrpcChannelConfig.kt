@@ -29,7 +29,6 @@ class GrpcChannelConfig(
             clientKeyInputStream.use { clientKeyStream ->
                 builder.sslContext(
                     GrpcSslContexts.forClient()
-                        // TODO 이건 뭐지?
                         .trustManager(InsecureTrustManagerFactory.INSTANCE)
                         .keyManager(
                             clientCertStream, clientKeyStream,

@@ -1,0 +1,41 @@
+extend type Mutation {
+    createMember(input: CreateMemberInput!): Member!
+}
+
+extend type Query {
+    member(id: Long!): Member
+}
+
+type Member {
+    id: Long!
+    name: String!
+    introduction: String
+    type: MemberType!
+    country: Country!
+    teamId: Long
+    team: Team
+    registeredBy: String!
+    registeredDate: LocalDateTime!
+    modifiedBy: String!
+    modifiedDate: LocalDateTime!
+}
+
+enum MemberType {
+    INDIVIDUAL
+    COMPANY
+}
+
+enum Country{
+    KR
+    US
+    JP
+}
+
+input CreateMemberInput {
+    name: String! @NotBlank
+    introduction: String @NotBlank
+    country: Country!
+    type: MemberType!
+    teamId: Long
+    requestedBy: String! @NotBlank
+}

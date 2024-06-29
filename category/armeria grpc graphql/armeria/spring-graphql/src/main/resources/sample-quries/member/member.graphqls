@@ -1,0 +1,26 @@
+query member($id: Long!) {
+    member(id: $id) {
+        id
+        name
+        introduction
+        type
+        country
+        team {
+            id
+            name
+            registeredBy
+            registeredDate
+            modifiedBy
+            modifiedDate
+        }
+        registeredBy
+        registeredDate
+        modifiedBy
+        modifiedDate
+    }
+}
+
+# variables
+#{
+#"id": 1
+#}

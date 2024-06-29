@@ -12,8 +12,4 @@ class MemberService(
     suspend fun createMember(createMemberRequest: MemberDto.CreateMemberRequest): MemberDto.MemberResponse {
         return memberClient.createMember(createMemberRequest)
     }
-
-    suspend fun getMembersByTeamId(teamId: Long): MemberDto.MemberListResponse {
-        return memberClient.getMembersByTeamId(teamId)
-    }
 }

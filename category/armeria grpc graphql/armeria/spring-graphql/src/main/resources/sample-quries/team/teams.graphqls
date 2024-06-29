@@ -1,0 +1,18 @@
+query teams($ids: [Long!]!) {
+    teams(ids: $ids) {
+        id
+        name
+        registeredBy
+        registeredDate
+        modifiedBy
+        modifiedDate
+        members{
+            id
+        }
+    }
+}
+
+#variables
+#{
+#  "ids": [1,2,3]
+#}

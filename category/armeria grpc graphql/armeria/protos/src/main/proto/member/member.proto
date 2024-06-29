@@ -6,12 +6,14 @@ option java_package = "com.example.proto.member";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
+import "common/common.proto";
 
 package member;
 
 service MemberHandler {
     rpc createMember(CreateMemberRequest) returns (MemberResponse);
-    rpc getMembersByTeamId(TeamId) returns (MemberListResponse);
+    rpc getMember(common.IdRequest) returns (MemberResponse);
+    rpc getMembersByTeamIds(common.IdsRequest) returns (MemberListResponse);
 }
 
 message CreateMemberRequest {
@@ -47,10 +49,6 @@ message MemberResponse {
     google.protobuf.Timestamp registeredDate = 8;
     string modifiedBy = 9;
     google.protobuf.Timestamp modifiedDate = 10;
-}
-
-message TeamId {
-    int64 id = 1;
 }
 
 message MemberListResponse {

@@ -1,0 +1,45 @@
+server:
+  port: 7071
+  shutdown: graceful
+
+spring:
+  profiles:
+    active: local
+  application:
+    name: spring-graphql
+  graphql:
+    graphiql:
+      enabled: true
+    schema:
+      inspection:
+        enabled: true
+    cors:
+      allowCredentials: true
+      allowedHeaders: "Content-Type"
+      allowedMethods: GET, POST, OPTIONS
+      allowedOriginPatterns: '*'
+
+
+grpc:
+  #  endpoint: gproto+http://localhost:8080
+  endpoint: localhost
+  port: 8443
+  timeout: 3000
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+    propagation:
+      type: B3
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+zipkin:
+  endpoint: http://localhost:19092
+  messageTimeout: 1
+
+

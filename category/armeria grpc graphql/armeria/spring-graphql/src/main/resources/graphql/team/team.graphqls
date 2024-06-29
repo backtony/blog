@@ -1,0 +1,23 @@
+extend type Query {
+    team(id: Long!): Team
+    teams(ids: [Long!]!): [Team!]!
+}
+
+extend type Mutation {
+    createTeam(input: CreateTeamInput!): Team!
+}
+
+type Team {
+    id: Long!
+    name: String!
+    registeredBy: String!
+    registeredDate: LocalDateTime!
+    modifiedBy: String!
+    modifiedDate: LocalDateTime!
+    members: [Member!]!
+}
+
+input CreateTeamInput {
+    name: String! @NotBlank
+    requestedBy: String! @NotBlank
+}

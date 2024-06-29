@@ -45,7 +45,6 @@ management:
     propagation:
       type: B3
 
-
 zipkin:
   endpoint: http://localhost:19092
   messageTimeout: 1

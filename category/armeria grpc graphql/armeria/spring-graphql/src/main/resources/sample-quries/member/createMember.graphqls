@@ -1,0 +1,33 @@
+mutation createMember($input: CreateMemberInput!) {
+    createMember(input: $input) {
+        id
+        name
+        introduction
+        type
+        country
+        team {
+            id
+            name
+            registeredBy
+            registeredDate
+            modifiedBy
+            modifiedDate
+        }
+        registeredBy
+        registeredDate
+        modifiedBy
+        modifiedDate
+    }
+}
+
+# variables
+#{
+#"input": {
+#"name": "junseong",
+#"introduction": "introduction",
+#"country": "KR",
+#"type": "INDIVIDUAL",
+#"teamId": 1,
+#"requestedBy": "junseong"
+#}
+#}

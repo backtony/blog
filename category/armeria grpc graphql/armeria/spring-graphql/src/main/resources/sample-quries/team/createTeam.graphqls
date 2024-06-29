@@ -1,0 +1,18 @@
+mutation createTeam($input: CreateTeamInput!) {
+    createTeam(input: $input) {
+        id
+        name
+        registeredBy
+        registeredDate
+        modifiedBy
+        modifiedDate
+    }
+}
+
+# variables
+#{
+#"input": {
+#"name": "junseong",
+#"requestedBy": "junseong"
+#}
+#}
