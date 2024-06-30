@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      uri : mongodb://root:root@localhost:27017/test?authSource=admin&connectTimeoutMS=10000
+      database: test-mongo
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.springframework.transaction.interceptor: trace

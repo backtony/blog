@@ -1,0 +1,31 @@
+version: "3.1"
+services:
+  mongodb1:
+    image: mongo
+    container_name: mongo1
+    hostname: mongo1
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    command: mongod --replSet rs0 --keyFile /etc/mongodb.key --bind_ip_all
+    volumes:
+      - ./db1:/data/db
+      - ~/.ssh/replica-mongodb-test.key:/etc/mongodb.key
+
+  mongodb2:
+    image: mongo
+    container_name: mongo2
+    hostname: mongo2
+    restart: always
+    ports:
+      - "27018:27018"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    command: mongod --replSet rs0 --keyFile /etc/mongodb.key --bind_ip_all
+    volumes:
+      - ./db2:/data/db
+      - ~/.ssh/replica-mongodb-test.key:/etc/mongodb.key
