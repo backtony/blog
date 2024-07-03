@@ -1,0 +1,22 @@
+server:
+  shutdown: graceful
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
+management:
+  server:
+    port: 9115
+
+spring:
+  profiles:
+    active: local
+  application:
+    name: sample-batch
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: embedded
+
+

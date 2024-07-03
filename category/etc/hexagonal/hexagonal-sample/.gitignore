@@ -1,0 +1,19 @@
+.DS_Store
+build
+.gradle
+node_modules
+dist
+logs
+bin/*
+
+# Editor directories and files
+*.iml
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+**/out/*

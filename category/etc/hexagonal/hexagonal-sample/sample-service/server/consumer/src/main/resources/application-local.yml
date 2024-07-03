@@ -1,0 +1,9 @@
+logging:
+  config: classpath:log/logback-env-local.xml
+
+server:
+  port: 7072
+
+management:
+  server:
+    port: 7117

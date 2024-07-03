@@ -1,0 +1,17 @@
+management:
+  endpoints:
+    web:
+      base-path: /monitor
+      path-mapping:
+        health: /health
+        prometheus: /metrics
+      exposure:
+        include: health, prometheus
+  health:
+    defaults.enabled: false
+    ping.enabled: true
+  endpoint:
+    health.probes.enabled: true
+    prometheus.enabled: true
+    configprops:
+      show-values: always

@@ -1,0 +1,12 @@
+server:
+  shutdown: graceful
+
+management:
+  server:
+    port: 9115
+
+spring:
+  profiles:
+    active: local
+  application:
+    name: contract-consumer
