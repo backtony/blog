@@ -1,0 +1,92 @@
+server:
+  port: 9000
+  shutdown: graceful
+  # https://velog.io/@jamie/mixed-content-error
+  tomcat:
+    remoteip:
+      protocol-header: x-forwarded-proto
+  servlet:
+    session:
+      cookie:
+        path: /
+        name: HELLOSESSION
+        domain: 127.0.0.1 # oauth server domain
+        http-only: true
+      timeout: 30m # oauth 로그인 후 리다이렉트 세션 유지
+
+spring:
+  application:
+    name: hello-authorization-server
+  session:
+    store-type: redis
+    redis:
+      namespace: oauth:hello
+
+  data:
+    redis:
+      url: localhost
+      port: 6379
+      connect-timeout: 3000
+      timeout: 3000
+
+  h2:
+    console:
+      enabled: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/authorization
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+  sql:
+    init:
+      mode: always
+
+oauth-client:
+  issuer-url: http://127.0.0.1:9000
+  access-token-ttl: 1h
+  refresh-token-ttl: 12h
+  client:
+    id: id
+    client-id: client-id
+    client-secret: client-secret
+    redirect-uri: http://127.0.0.1:8080/v1/oauth2/hello/callback/authorization-code
+
+jwk-source:
+  kid: f903ce46-56f8-49e4-b047-cc7ed2c4a878
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyhO7r0HxVLUpvZV0Jo/OLrjUF/4C0aFjo/R9KIzixLB/KeDvcNfIIRbnw1b9EWN8banxjBJozsYdka+bnxblGY6AaBGdQrWSVH5rwWDPGsoyj1DzVW0yhZlKYMttYj/x5eUo+q1A9RsSSfTy/7K+ORlKM0ajtMPNgT+ARbv+x+jT9Cral3xrJZz52kCuZ1RrTF8nUvQYDupIXx6ZrX2vtaJvW9VbqVA+NaYkbFeoC4xxTO+Vj+XclefwwT3PgG+F+hFL5axHAJbKReJGbbUlYioxjiUiVjGs2/5NJhBOsRhvpXqLu8hR87sL5JNGKbvo1ZT7xMwy/LO3YEpBOOclLwIDAQAB
+  private-key: MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDKE7uvQfFUtSm9lXQmj84uuNQX/gLRoWOj9H0ojOLEsH8p4O9w18ghFufDVv0RY3xtqfGMEmjOxh2Rr5ufFuUZjoBoEZ1CtZJUfmvBYM8ayjKPUPNVbTKFmUpgy21iP/Hl5Sj6rUD1GxJJ9PL/sr45GUozRqO0w82BP4BFu/7H6NP0KtqXfGslnPnaQK5nVGtMXydS9BgO6khfHpmtfa+1om9b1VupUD41piRsV6gLjHFM75WP5dyV5/DBPc+Ab4X6EUvlrEcAlspF4kZttSViKjGOJSJWMazb/k0mEE6xGG+leou7yFHzuwvkk0Ypu+jVlPvEzDL8s7dgSkE45yUvAgMBAAECggEAAw8JaD23SXD0kMoSWAMVO9/QVgyiPkoTGAg7XMHFLPT+98NP3IVnohiWqX5HllvLJl3MKjKdI4QcLnhaAq52CUz+5JRfrQLSlDTVrLeqat1kpoazKDfe6+bGGXD61uHg53nwhNragNtIC5aJlxU9i9+2H9CR6cqM8cfkSSnvUVdN9zN7Rqm23aBtJwEnkkUtgTEHMXuGWQpb2XdOBq+YjpysQq9oeAYByk470SY83ihLetFrridUZyj6Hcav+GUD9CW8KvPI789ctLz+flr8pAr492qiS/NxfyGQGq8+yHb+/7cCJ1fAJfeCBikfJ1eBJXHe19sTLEegwY+IgCoeAQKBgQDzg1pL6CMilYlb6FF0eTdod/ZjD0X4DZSIh6DvIrVa0u8I+l+arDb0fcuCwkPiw/Kv4PAv0oSap/Pw204EmQPRYgIiFJrEFuVTwLCX3VZhyYPIFrvbsLguUJ+rcYDeSJ5GSGOxasmxBIhUSInkxutFfZGUCjUstG3D9vVvfSK12QKBgQDUcHDzSvbTDjHeF4heNSVTxEWSEW4rNtR8ykovMI64cd4DcxgJZLfJozPj41p50qfI4GkTRNx3/yU39j7TZiJTQvpv1TWrRoTxVUV+NzbD2L/1PKz2ftT94UovD5Ef94B+V2jzhB26TDCnse88Guc4xrf53TEU5oSmt7VRz7ymRwKBgGJdV9c7sR2iO/cVM/oRkPExLCS9oazeh3ZTGw4d/hXvCMGeqYnIMPa37cInCNcMAfdLrJoUtp3mZCKR48T1rlYg+e2cVxwIh6A6QNtHfEJJ7WKg1Eec7fk/dhAB7GVd/hkz2plrIofP5eXt202/kH/khi6/pNUnGQPEuUXMzX2ZAoGBAI6n5yFpYLA/4vrZ4KgqliNXNMSu0cVRL4WRLhncSKrRRB4a5rRAHy7XWlwY60PNUwCQud7Hqikme+7FfFDnT/uLibMZgM3AMDwDYAQuvabsYZMkKJ3qc8r8w50wnerSgEXXGtIUEQZubWnfEeDRzB2TTC4M/A2l8sQlryv+DRe3AoGBALlSb/ynRBn7wyVm0MCb8gTdjfLueD8+1rvHQEIrHtL5R/6tXTIzQbV2Yw2jNz1K1f8cjYuUBVYoLBBdnP+8wnkskrmGo/dNiliQUh74/HqQLiN3sYeRdt0I10Tz9CsJfPqoRGzN4LttcpIfW1+Dp/UDkcTqXWO8Zy2NeFmOelzu
+
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+  endpoints:
+    web:
+      base-path: /monitor
+      path-mapping:
+        health: /health
+      exposure:
+        include: health
+  health:
+    defaults.enabled: false
+    ping.enabled: true
+  endpoint:
+    health.probes.enabled: true
+    prometheus.enabled: true
+    configprops:
+      show-values: always
+  server:
+    port: 9115
+

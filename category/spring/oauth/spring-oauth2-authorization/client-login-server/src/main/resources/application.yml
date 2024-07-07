@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: client-login-server
+
+oauth2:
+  cookie-domain: 127.0.0.1
+  cookie-name:
+    login-type-cookie-name: login_type
+    access-cookie-name: access_token
+    refresh-cookie-name: refresh_token
+  clients:
+    - type: HELLO
+      base-url: http://127.0.0.1:9000
+      client-id: client-id
+      client-secret: client-secret
+
