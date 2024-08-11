@@ -2,8 +2,10 @@ package com.example.consumer.config
 
 import io.micrometer.core.instrument.MeterRegistry
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.common.serialization.BytesDeserializer
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.utils.Bytes
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties
 import org.springframework.boot.ssl.SslBundles
 import org.springframework.context.annotation.Bean
@@ -17,9 +19,11 @@ import org.springframework.kafka.core.MicrometerConsumerListener
 import org.springframework.kafka.listener.CommonErrorHandler
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerRecordRecoverer
+import org.springframework.kafka.listener.ContainerProperties
 import org.springframework.kafka.listener.DefaultErrorHandler
+import org.springframework.kafka.support.converter.BatchMessagingMessageConverter
+import org.springframework.kafka.support.converter.JsonMessageConverter
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.util.backoff.FixedBackOff
 
 @EnableKafka
@@ -33,19 +37,41 @@ class ConsumerConfig(
 
     @Bean(COMMON)
     fun commonKafkaListenerContainerFactory(
-        commonConsumerFactory: ConsumerFactory<String, Any>,
+        commonConsumerFactory: ConsumerFactory<String, Bytes>,
         commonErrorHandler: CommonErrorHandler,
-    ): KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, Any>> {
-        return ConcurrentKafkaListenerContainerFactory<String, Any>().apply {
+    ): KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, Bytes>> {
+        return ConcurrentKafkaListenerContainerFactory<String, Bytes>().apply {
             consumerFactory = commonConsumerFactory
+            setRecordMessageConverter(JsonMessageConverter())
+            setBatchMessageConverter(BatchMessagingMessageConverter(JsonMessageConverter()))
             setCommonErrorHandler(commonErrorHandler)
         }
     }
 
+    @Bean(MANUAL_ACK)
+    fun manualAckKafkaListenerContainerFactory(
+        consumerFactory: ConsumerFactory<String, String>,
+        commonErrorHandler: CommonErrorHandler,
+    ): ConcurrentKafkaListenerContainerFactory<String, String> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+        factory.consumerFactory = consumerFactory
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        factory.setCommonErrorHandler(commonErrorHandler)
+        factory.setRecordMessageConverter(JsonMessageConverter())
+        factory.setBatchMessageConverter(BatchMessagingMessageConverter(JsonMessageConverter()))
+        return factory
+    }
+
     @Bean
-    fun commonConsumerFactory(): ConsumerFactory<String, Any> {
-        return DefaultKafkaConsumerFactory(getCommonConsumerConfigs(), StringDeserializer(), getJsonValueDeserializer())
+    fun commonConsumerFactory(): ConsumerFactory<String, Bytes> {
+        return DefaultKafkaConsumerFactory(getCommonConsumerConfigs(), StringDeserializer(), getBytesValueDeserializer())
             .apply { addListener(MicrometerConsumerListener(meterRegistry)) }
+    }
+
+    private fun getBytesValueDeserializer(): Deserializer<Bytes> {
+        return ErrorHandlingDeserializer(
+            BytesDeserializer(),
+        )
     }
 
     private fun getCommonConsumerConfigs(): Map<String, Any> {
@@ -58,15 +84,8 @@ class ConsumerConfig(
         return DefaultErrorHandler(commonConsumerRecordRecoverer, FixedBackOff(1000L, 3L))
     }
 
-    private fun getJsonValueDeserializer(): Deserializer<Any> {
-        return ErrorHandlingDeserializer(
-            JsonDeserializer(Any::class.java).apply {
-                setUseTypeHeaders(false)
-            },
-        )
-    }
-
     companion object {
         const val COMMON = "commonKafkaListenerContainerFactory"
+        const val MANUAL_ACK = "manualAckKafkaListenerContainerFactory"
     }
 }

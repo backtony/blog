@@ -12,7 +12,9 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.MicrometerConsumerListener
+import org.springframework.kafka.listener.CommonErrorHandler
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
+import org.springframework.kafka.listener.ContainerProperties
 import org.springframework.kafka.support.serializer.JsonDeserializer
 
 @EnableKafka
@@ -32,6 +34,17 @@ class ConsumerConfig(
         }
     }
 
+    @Bean(MANUAL_ACK)
+    fun manualAckKafkaListenerContainerFactory(
+        consumerFactory: ConsumerFactory<String, Any>,
+    ): ConcurrentKafkaListenerContainerFactory<String, *> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, Any>()
+        factory.consumerFactory = consumerFactory
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        return factory
+    }
+
+
     @Bean
     fun commonConsumerFactory(): ConsumerFactory<String, Any> {
         val keyDeserializer = StringDeserializer()
@@ -49,5 +62,6 @@ class ConsumerConfig(
 
     companion object {
         const val COMMON = "commonKafkaListenerContainerFactory"
+        const val MANUAL_ACK = "manualAckKafkaListenerContainerFactory"
     }
 }

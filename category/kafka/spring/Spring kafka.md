@@ -276,6 +276,9 @@ fun commonKafkaListenerContainerFactory(
 
 spring kafka consumer는 메시지를 소비하고 브로커에게 메시지를 소비했다고 커밋하는 과정이 필요합니다. spring kafka consumer에서 자동으로 일정 시간 이후에 commit하는 옵션인 enable.auto.commit 옵션은 2.3 버전 이후부터 false가 default값으로 변경되었고 AckMode를 통해 컨트롤 됩니다. 
 
+
+auto.commit이 true 인 경우, AckMode는 무시되며, auto.commit.interval 옵션에 의해 interval 시간마다 커밋됩니다. 반면에 enable.auto.commit옵션이 false인 경우, AckMode에 의해 커밋 주기가 결정됩니다.
+
 | AckMode | 설명 |
 | --- | --- |
 | RECORD | 레코드 단위로 프로세싱 이후 커밋 |
@@ -410,98 +413,102 @@ val valueDeserializer = JsonDeserializer(Any::class.java).apply {
   }
 ```
 
-반면에 프로젝트가 MSA 환경이라 다른 팀에서 보낸 메시지를 우리 팀에서 수신해야 하는 경우가 있습니다. 이 경우에는 멀티모듈 구조와 달리 해당 객체를 공유해서 사용할 수 없습니다. 이 경우에는 2가지 방법이 있습니다.
+반면에 프로젝트가 MSA 환경이라 다른 팀에서 보낸 메시지를 우리 팀에서 수신해야 하는 경우가 있습니다. 이 경우에는 멀티모듈 구조와 달리 해당 객체를 공유해서 사용할 수 없습니다. 이 경우에는 다음과 같은 방법을 사용할 수 있습니다.
 
-1.  메시지 값타입을 String 값으로 받아서 consumer 처리 로직에서 objectMapper로 타입을 직접 변환하는 방식
-2.  JsonDeserilizer에서 헤더에 있는 타입을 사용하지 않는 방식
-3.  Type Mapping을 사용하는 방식
+* 메시지 값타입을 String 값으로 받아서 consumer 처리 로직에서 objectMapper로 타입을 직접 변환하는 방식
+* [header를 이용한 type Mapping 방식](https://docs.spring.io/spring-kafka/reference/kafka/serdes.html#using-headers)
+  * 이 방법은 producer와 consumer에서 모두 설정해줘야 합니다.
+* [topic별 매핑 방식](https://docs.spring.io/spring-kafka/reference/kafka/serdes.html#by-type)
+  * consumer 쪽에서만 설정하면 되나, topic별 단일 deserilizer를 사용할 수 있습니다.
+* [messaging message conversion 방식](https://docs.spring.io/spring-kafka/reference/kafka/serdes.html#messaging-message-conversion)
 
 1번의 경우 는 ConsumerConfig에서 설정한 factory들의 value 타입을 String으로 바꾸고 @kafkaListener가 붙은 함수에서 메시지를 String으로 받아서 ObjectMapper로 직접 타입을 변환하고 처리하면 됩니다.
 
-2번의 경우는 JsonDeserializer만 다음과 같이 변경하면 됩니다. 
+이외의 방법 중에서는 마지막 방법이 가장 수정 범위가 적습니다. header type 매핑 방식을 사용하면 @KafkaHandler를 사용할 수 있지만 producer에 해당하는 팀과 별도의 협의가 필요합니다.
 
-```
-val valueDeserializer = JsonDeserializer(Any::class.java, false)
-```
+```kotlin
+@EnableKafka
+@Configuration
+class ConsumerConfig(
+    private val kafkaProperties: KafkaProperties,
+    private val meterRegistry: MeterRegistry,
+    private val sslBundles: SslBundles,
+    private val commonConsumerRecordRecoverer: ConsumerRecordRecoverer,
+) {
 
-이 방식을 사용할 경우, @kafkaListener에서 바로 value 타입으로 받지 못하기 때문에 ConsumerRecord 형태로 인자를 받아서 처리해야 합니다. 
-
-```
-@KafkaListener(
-    groupId = "backtony-test-single",
-    topics = ["backtony-test"],
-    containerFactory = COMMON,
-)
-fun sample(record: ConsumerRecord<String, Article>) {
-    log.info { record.value() }
-}
-```
-
-이 경우 @KafkaHandler(하나의 토픽에 대해 여러 타입의 메시지를 소화하는 애노테이션)를 사용하지 못합니다.
-
-Any가 아닌 특정 DTO 클래스를 지정하는 경우 타입별로 kafkaListenerContainerFactory를 만들어줘야하는 번거로움이 있습니다. 특정 타입으로 사용해서 kafkaListenerContainerFactory를 각 타입마다 만들어주기로 선택한다면 위 deserilizer에서 타입만 Any 대신 특정 타입으로 바꿔주면 이전과 같이 바로 value를 인자로 받을 수 있습니다.
-
-```
-private fun getJsonValueDeserializer(): Deserializer<Any> {
-    val typeMapper = DefaultJackson2JavaTypeMapper()
-        .apply {
-            typePrecedence = Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-            idClassMapping = mapOf(
-                "com.example.producer.publisher.Article" to Article::class.java
-            )
+    @Bean(COMMON)
+    fun commonKafkaListenerContainerFactory(
+        commonConsumerFactory: ConsumerFactory<String, Bytes>,
+        commonErrorHandler: CommonErrorHandler,
+    ): KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, Bytes>> {
+        return ConcurrentKafkaListenerContainerFactory<String, Bytes>().apply {
+            consumerFactory = commonConsumerFactory
+            setRecordMessageConverter(JsonMessageConverter()) // jsonMessageConverter 등록 필수 
+            setBatchMessageConverter(BatchMessagingMessageConverter(JsonMessageConverter())) // jsonMessageConverter 등록 필수
+            setCommonErrorHandler(commonErrorHandler)
         }
-
-    return ErrorHandlingDeserializer(
-        JsonDeserializer(Any::class.java).apply {
-            typeMapper(typeMapper)
-        },
-    )
-}
-```
-
-3번째 방식은 typeMapper를 등록하는 방식입니다. producer에는 com.example.producer.publisher.Article로 타입 정보를 넘겨오는데 이걸 consumer 패키지에 있는 DTO 타입과 매핑시키는 방식입니다. 이 경우 producer 쪽에서 패키지나 타입을 수정하면 consumer 쪽에서 이슈가 발생합니다.
-
-```
-@Bean
-fun commonProducerFactory(): ProducerFactory<String, Any> {
-    val keySerializer = StringSerializer()
-    val valueSerializer = JsonSerializer<Any>().apply {
-        typeMapper = DefaultJackson2JavaTypeMapper()
-            .apply {
-                typePrecedence = Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-                idClassMapping = mapOf(
-                    "article" to Article::class.java
-                )
-            }
+    }
+ 
+    @Bean
+    fun commonConsumerFactory(): ConsumerFactory<String, Bytes> {
+        return DefaultKafkaConsumerFactory(getCommonConsumerConfigs(), StringDeserializer(), getBytesValueDeserializer())
+            .apply { addListener(MicrometerConsumerListener(meterRegistry)) }
     }
 
-    return DefaultKafkaProducerFactory(kafkaProperties.buildProducerProperties(sslBundles), keySerializer, valueSerializer)
-        .apply { addListener(MicrometerProducerListener(meterRegistry)) }
+    private fun getBytesValueDeserializer(): Deserializer<Bytes> {
+        return ErrorHandlingDeserializer(
+            BytesDeserializer()
+        )
+    }
+
+    private fun getCommonConsumerConfigs(): Map<String, Any> {
+        return kafkaProperties.buildConsumerProperties(sslBundles)
+            .apply { put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, LoggingConsumerInterceptor::class.java.name) }
+    }
+
+    @Bean
+    fun commonErrorHandler(): CommonErrorHandler {
+        return DefaultErrorHandler(commonConsumerRecordRecoverer, FixedBackOff(1000L, 3L))
+    }
+
+    companion object {
+        const val COMMON = "commonKafkaListenerContainerFactory"
+        const val MANUAL_ACK = "manualAckKafkaListenerContainerFactory"
+    }
 }
 ```
+jsonMessageConverter 등록으로 인해 타입 추론을 통해 다음과 같은 방식으로 구현이 가능합니다.
 
+```kotlin
+@Configuration
+class SampleListener {
 
-producer 쪽에서도 타입 매핑으로 위와 같이 추가해서 보내주면 consumer 또한 아래와 같이 모든 패키지를 명시하지 않고 처리할 수 있습니다.
+    private val log = KotlinLogging.logger { }
 
-```
-private fun getJsonValueDeserializer(): Deserializer<Any> {
-    val typeMapper = DefaultJackson2JavaTypeMapper()
-        .apply {
-            typePrecedence = Jackson2JavaTypeMapper.TypePrecedence.TYPE_ID
-            idClassMapping = mapOf(
-                "article" to Article::class.java
-            )
-        }
-
-    return ErrorHandlingDeserializer(
-        JsonDeserializer(Any::class.java).apply {
-            typeMapper(typeMapper)
-        },
+    @KafkaListener(
+        groupId = "backtony-test-single",
+        topics = ["backtony-test"],
+        containerFactory = COMMON,
     )
+    fun sample(article: Article) {
+        log.info { article.id }
+    }
+
+    @KafkaListener(
+        groupId = "backtony-test-batch",
+        topics = ["backtony-test"],
+        containerFactory = COMMON,
+        batch = "true",
+    )
+    fun sampleBatch(articles: List<Article>) {
+
+        for (article in articles) {
+            log.info { "articleId : ${article.id}" }
+        }
+    }
 }
 ```
 
-이 방식을 사용하면 @KafkaHandler도 사용할 수 있고 value 타입을 인자로 받아서 바로 처리할 수도 있습니다. 이 방식을 사용하게 된다면 사전에 메시지를 발행하는 쪽과 협의가 필요합니다.
 
 ### ErrorHandlingDeserializer
 
