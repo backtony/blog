@@ -48,19 +48,19 @@ class ConsumerConfig(
         }
     }
 
-    @Bean(MANUAL_ACK)
-    fun manualAckKafkaListenerContainerFactory(
-        consumerFactory: ConsumerFactory<String, String>,
-        commonErrorHandler: CommonErrorHandler,
-    ): ConcurrentKafkaListenerContainerFactory<String, String> {
-        val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-        factory.consumerFactory = consumerFactory
-        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
-        factory.setCommonErrorHandler(commonErrorHandler)
-        factory.setRecordMessageConverter(JsonMessageConverter())
-        factory.setBatchMessageConverter(BatchMessagingMessageConverter(JsonMessageConverter()))
-        return factory
-    }
+//    @Bean(MANUAL_ACK)
+//    fun manualAckKafkaListenerContainerFactory(
+//        consumerFactory: ConsumerFactory<String, Bytes>,
+//        commonErrorHandler: CommonErrorHandler,
+//    ): ConcurrentKafkaListenerContainerFactory<String, Bytes> {
+//        val factory = ConcurrentKafkaListenerContainerFactory<String, Bytes>()
+//        factory.consumerFactory = consumerFactory
+//        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+//        factory.setCommonErrorHandler(commonErrorHandler)
+//        factory.setRecordMessageConverter(JsonMessageConverter())
+//        factory.setBatchMessageConverter(BatchMessagingMessageConverter(JsonMessageConverter()))
+//        return factory
+//    }
 
     @Bean
     fun commonConsumerFactory(): ConsumerFactory<String, Bytes> {
