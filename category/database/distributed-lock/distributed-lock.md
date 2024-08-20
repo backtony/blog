@@ -147,66 +147,86 @@ Coroutine에서는 마땅히 넣어줄 threadId가 존재하지 않기 때문에
 ```kotlin
 @Component
 class DistributedLockUtils(
-    private val redissonReactiveClient: RedissonReactiveClient,
-    private val transactionUtils: TransactionUtils,
+  private val redissonReactiveClient: RedissonReactiveClient,
+  private val transactionUtils: TransactionUtils,
 ) {
-    private val log = KotlinLogging.logger {}
 
-    suspend fun <T> run(targetClassName: String, id: String, block: suspend () -> T): T {
-        return withContext(Dispatchers.IO) {
-            val uniqueId = SecureRandom().nextLong()
-            val lockName = "$targetClassName:$id"
-            val lock = redissonReactiveClient.getLock(lockName)
-            val available = lock.tryLock(TRY_LOCK_TIME_OUT, LEASE_TIME, TimeUnit.SECONDS, uniqueId).awaitSingle()
+  val random = SecureRandom()
 
-            check(available) { "Fail to get lock $lockName. Acquire lock timeout." }
+  suspend fun <T> run(targetClassName: String, id: String, block: suspend () -> T): T {
+    val uniqueId = random.nextLong()
+    val lockName = "$targetClassName:$id"
+    val lock = redissonReactiveClient.getLock(lockName)
+    var isTimeout = false
 
-            try {
-                withTimeout(TARGET_METHOD_TIME_OUT.toDuration(DurationUnit.SECONDS)) {
-                    transactionUtils.executeInNewTransaction { block.invoke() }
-                }
-            } catch (ex: Exception) {
-                when (ex) {
-                    is TimeoutCancellationException -> throw IllegalStateException(
-                        "Lock lease time expired. LockName : $lockName ", ex
-                    )
+    val available = lock.tryLock(TRY_LOCK_TIME_OUT, LEASE_TIME, TimeUnit.SECONDS, uniqueId).awaitSingle()
 
-                    else -> throw ex
-                }
-            } finally {
-                withContext(NonCancellable) {
-                    lock.unlock(uniqueId).awaitSingleOrNull()
-                }
-            }
+    check(available) { "Fail to get lock $lockName. Acquire lock timeout." }
+
+    try {
+      return transactionUtils.executeInNewTransaction(
+        timeoutSecond = TARGET_METHOD_TIME_OUT,
+        operation = { block.invoke() }
+      )
+    } catch (ex: Exception) {
+      when (ex) {
+        is TimeoutCancellationException -> {
+          isTimeout = true
+          throw IllegalStateException(
+            "Lock lease time expired. LockName : $lockName ", ex
+          )
         }
+
+        else -> throw ex
+      }
+    } finally {
+      if (isTimeout.not()) {
+        withContext(NonCancellable) {
+          lock.unlock(uniqueId).awaitSingleOrNull()
+        }
+      }
     }
+  }
 
-    companion object {
-        // 획득까지 대기 시간
-        private const val TRY_LOCK_TIME_OUT = 7L
+  companion object {
+    // 획득까지 대기 시간
+    private const val TRY_LOCK_TIME_OUT = 5L
 
-        // 획득 이후 잡고 있을 시간, 이 시간이 지나도 unlock되지 않으면 자동으로 unlock
-        private const val LEASE_TIME = 5L
+    // 획득 이후 잡고 있을 시간, 이 시간이 지나도 unlock되지 않으면 자동으로 unlock
+    private const val LEASE_TIME = 4L
 
-        private const val TARGET_METHOD_TIME_OUT = 3L
-    }
+    private const val TARGET_METHOD_TIME_OUT = 3L
+  }
 }
 ```
-trailing lambda 방식으로 구현한 DistributedLockUtils 클래스입니다. threadId 대신 secureRandom의 nextLong 값을 사용해서 채웠습니다. leaseTime이 지나면 lock이 자동으로 해제되기 때문에 다른 요청이 락을 획득해서 사용하게 되면 문제가 발생할 수 있습니다. 따라서 LeaseTime보다 작은 값으로 target 메서드를 호출하는 로직에 withTimeout으로 감싸서 제한시간 내에 메서드 수행이 완료되지 않는 경우 예외를 발생시키도록 했습니다. 
+trailing lambda 방식으로 구현한 DistributedLockUtils 클래스입니다. threadId 대신 secureRandom의 nextLong 값을 사용해서 채웠습니다. leaseTime이 지나면 lock이 자동으로 해제되기 때문에 다른 요청이 락을 획득해서 사용하게 되면 문제가 발생할 수 있습니다. 따라서 아래 transactionaUtils 클래스에서 LeaseTime보다 작은 값으로 target 메서드를 호출하는 로직에 withTimeout으로 감싸서 제한시간 내에 메서드 수행이 완료되지 않는 경우 예외를 발생시키도록 했습니다.
 
 lock을 획득하는 코드와 실제 타겟 메서드 호출의 트랜잭션을 분리해하기 때문에 해당 메서드의 호출은 transactioUtils 클래스에서 처리합니다. 만약 같은 트랜잭션에서 호출하게 되는 경우, 타겟 메서드의 트랜잭션이 커밋되지 않은 상태에서 락을 해제하게 되므로 데이터 정합성을 보장할 수 없게 되기 때문입니다.
 ```kotlin
 @Component
 class TransactionUtils {
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    suspend fun <T> executeInNewTransaction(
-        operation: suspend () -> T,
-    ): T {
-       return operation()
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  suspend fun <T> executeInNewTransaction(
+    timeoutSecond: Long = -1,
+    operation: suspend () -> T,
+  ): T {
+    if (timeoutSecond == -1L) {
+      return operation()
     }
+
+    try {
+      return withTimeout(timeoutSecond.toDuration(DurationUnit.SECONDS)) {
+        operation()
+      }
+    } catch (ex: Exception) {
+      throw ex
+    }
+  }
 }
 ```
+현재는 coroutine에 대한 지원이 없어 약간의 우회를 통해 사용했지만 [이슈](https://github.com/redisson/redisson/issues/5667)에 feature로 등록된 것으로 보아 추후 기능이 추가될 것으로 예상됩니다. aop 대신 trailing lambda 문법을 사용한 이유는 아직 spring coroutine 환경에서 aop와 transactional을 동시에 사용하면 버그가 있기 때문입니다. 관련 내용은 [스프링 이슈](https://github.com/spring-projects/spring-framework/issues/33095)에서 해결중입니다
+
 
 **참고**
 * [풀필먼트 입고 서비스팀에서 분산락을 사용하는 방법 - Spring Redisson](https://helloworld.kurly.com/blog/distributed-redisson-lock/)
