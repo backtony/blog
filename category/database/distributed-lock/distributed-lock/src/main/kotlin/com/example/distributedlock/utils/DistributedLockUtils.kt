@@ -29,7 +29,6 @@ class DistributedLockUtils(
         val uniqueId = random.nextLong()
         val lockName = "$targetClassName:$id"
         val lock = redissonReactiveClient.getLock(lockName)
-        var isTimeout = false
 
         val available = lock.tryLock(TRY_LOCK_TIME_OUT, LEASE_TIME, TimeUnit.SECONDS, uniqueId).awaitSingle()
 
@@ -43,19 +42,16 @@ class DistributedLockUtils(
         } catch (ex: Exception) {
             when (ex) {
                 is TimeoutCancellationException -> {
-                    isTimeout = true
                     throw IllegalStateException(
-                        "Lock lease time expired. LockName : $lockName ", ex
+                        "Target Method timeout Lock lease will be release. LockName : $lockName ", ex
                     )
                 }
 
                 else -> throw ex
             }
         } finally {
-            if (isTimeout.not()) {
-                withContext(NonCancellable) {
-                    lock.unlock(uniqueId).awaitSingleOrNull()
-                }
+            withContext(NonCancellable) {
+                lock.unlock(uniqueId).awaitSingleOrNull()
             }
         }
     }
