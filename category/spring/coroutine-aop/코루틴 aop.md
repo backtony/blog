@@ -66,7 +66,7 @@ suspend fun ProceedingJoinPoint.proceedCoroutine(
 ![그림8](./8.png)
 
 > [코루틴 공식 가이드 자세히 읽기](https://myungpyo.medium.com/%EC%BD%94%EB%A3%A8%ED%8B%B4-%EA%B3%B5%EC%8B%9D-%EA%B0%80%EC%9D%B4%EB%93%9C-%EC%9E%90%EC%84%B8%ED%9E%88-%EC%9D%BD%EA%B8%B0-part-2-dive-1-4c468828319)
-> 전달 된 코드 블럭에서 호출 코루틴(Continuation) 정보에 접근할 수 있도록 해줍니다. 또한, 전달 된 코드 블럭에서 COROUTINE_SUSPENDED 라는 미리 정의 된 값을 반환 할 경우에는 코루틴이 처리를 위해 시간이 필요하여 값을 바로 반환하지 않고 처리가 완료되면 continuation 파라미터를 통해 결과를 전달할 것임을 나타내고, 그 이외의 값을 반환할 경우에는 중단 없이 바로 결과 값을 반환한 것을 나타냅니다.
+> 전달된 코드 블럭에서 호출 코루틴(Continuation) 정보에 접근할 수 있도록 해줍니다. 또한, 전달된 코드 블럭에서 COROUTINE_SUSPENDED 라는 미리 정의된 값을 반환할 경우에는 코루틴이 처리를 위해 시간이 필요하여 값을 바로 반환하지 않고 처리가 완료되면 continuation 파라미터를 통해 결과를 전달할 것임을 나타내고, 그 이외의 값을 반환할 경우에는 중단 없이 바로 결과 값을 반환한 것을 나타냅니다.
 
 jointPoint.proceed()의 타겟 메서드가 suspend 함수이기 때문에 마지막 인자로 continuation을 넘겨주기 위해 사용한다고 보시면 됩니다. 
 
@@ -106,7 +106,7 @@ spring에서 coroutine의 호환성을 대응하기 시작하면서 spring aop�
 
 ![그림6](./6.png)
 
-코멘트를 확인해보면 6.1.0-RC1 버전부터는 advice에서 타겟메서드가 suspend 함수인 경우 Mono를 리턴한다고 합니다.
+코멘트를 확인 해보면 6.1.0-RC1 버전부터는 advice에서 타겟메서드가 suspend 함수인 경우 Mono를 리턴한다고 합니다.
 
 
 ![그림9](./9.png)
@@ -123,7 +123,7 @@ HandlerAdaptor의 구현체인 RequestMappingHandlerAdpater를 보면 요청에 
 
 ![그림11](./11.png)
 
-invoke를 더 타고 들어가다보면 suspend 함수인 경우 CoroutinesUtils.invokeSuspendingFunction를 호출하게 됩니다. CoroutinesUtils.invokeSuspendingFunction를 따라가다보면 아래와 같은 코드를 보게 됩니다.
+invoke를 더 타고 들어가다 보면 suspend 함수인 경우 CoroutinesUtils.invokeSuspendingFunction를 호출하게 됩니다. CoroutinesUtils.invokeSuspendingFunction를 따라가다 보면 아래와 같은 코드를 보게 됩니다.
 
 ![그림12](./12.png)
 
@@ -133,7 +133,7 @@ invoke를 더 타고 들어가다보면 suspend 함수인 경우 CoroutinesUtils
 
 ![그림13](./13.png)
 
-더이상 이전처럼 확장함수를 사용할 필요 없이 mono를 한번 감싸주면 잘 동작합니다.
+더 이상 이전처럼 확장함수를 사용할 필요 없이 mono를 한번 감싸주면 잘 동작합니다.
 
 
 ## @Transactional과 AOP를 사용하는 경우 AOP가 무시되는 경우
@@ -181,16 +181,16 @@ class LoggingAspect {
 }
 ```
 
-@Logging 애노테이션과 @Transactional을 함께 붙여서 실행시켜보면 advice가 동작하지 않고 @Order 애노테이션을 명시해야만 advice가 동작하는 이슈가 있습니다. 
+@Logging 애노테이션과 @Transactional을 함께 붙여서 실행시켜 보면 advice가 동작하지 않고 @Order 애노테이션을 명시해야만 advice가 동작하는 이슈가 있습니다. 
 
 > https://github.com/spring-projects/spring-framework/issues/33095
 
-원인파악이 잘 안되서 spring에 이슈를 남겼고 버그라고 답변을 받았습니다. 6.1.11 버전에서 수정되었습니다.
+원인파악이 잘 안돼서 spring에 이슈를 남겼고 버그라고 답변을 받았습니다. 6.1.11 버전에서 수정되었습니다.
 
 
 ## CPS 패턴
 
-Kotlin 은 비동기 프로그래밍을 지원을 위해 CSP(Communicating Sequential Process) 기법을 사용합니다. Suspend 함수는 Suspension point(중단점)을 제공하여 함수가 중단될 수 있도록 하며, 이를 통하여 blocking 로직으로 부터 벗어나서 비동기로 동작할 수 있도록 합니다. Kotlin 은 이 중단점을 제공하기 위해 Suspend 함수를 컴파일 할 때, 함수 마지막 인자로 Continuation 이라는 객체를 추가합니다.
+Kotlin 은 비동기 프로그래밍을 지원을 위해 CSP(Communicating Sequential Process) 기법을 사용합니다. Suspend 함수는 Suspension point(중단점)을 제공하여 함수가 중단될 수 있도록 하며, 이를 통하여 blocking 로직으로부터 벗어나서 비동기로 동작할 수 있도록 합니다. Kotlin 은 이 중단점을 제공하기 위해 Suspend 함수를 컴파일 할 때, 함수 마지막 인자로 Continuation 이라는 객체를 추가합니다.
 
 ```kotlin
 // Kotlin 
@@ -210,7 +210,7 @@ interface Continuation<in T> {
 	fun resumeWith(result: Result<T>)
 }
 ```
-continuation은 resumeWith 호출로 결과값을 전달해 원래 함수를 재개시키는 기능을 제공합니다. 함수를 일시중지 시키고 재개하려면 어디까지 진행했고 어디서부터 다시 재개해야하는지 알고있어야 합니다. 이는 코틀린 컴파일러가 코드를 변환할때 label을 두어 표시합니다.
+continuation은 resumeWith 호출로 결과값을 전달해 원래 함수를 재개시키는 기능을 제공합니다. 함수를 일시중지 시키고 재개하려면 어디까지 진행했고 어디서부터 다시 재개해야 하는지 알고 있어야 합니다. 이는 코틀린 컴파일러가 코드를 변환할 때 label을 두어 표시합니다.
 
 ```kotlin
 suspend fun makeHelloWorld(): String {
@@ -229,7 +229,7 @@ suspend fun makeHelloWorld(): String {
 
 ![그림15](./15.png)
 
-invokeSuspend 함수 호출부가 바로 앞서 만들었던 makeHelloWorld 함수를 호출하는 부분입니다. 해당 함수의 리턴 값이 COROUTINE_SUSPENDED라면 해당 함수를 return해버립니다. 즉, 중단지점이 없는 경우라면 while문의 반복으로 앞선 switch case문들이 계속 돌아가면서 타겟함수의 수행이 완료되는 것이고, 중단지점이 존재한다면 COROUTINE_SUSPENDED를 리턴받으면서  특정 switch문까지만 진행되고 일시중지되었다가 해당 작업이 완료되면 코루틴 프레임워크에 의해 자동으로 resumeWith가 호출되면서 다시 작업이 이어지는 것입니다.
+invokeSuspend 함수 호출부가 바로 앞서 만들었던 makeHelloWorld 함수를 호출하는 부분입니다. 해당 함수의 리턴 값이 COROUTINE_SUSPENDED라면 해당 함수를 return해버립니다. 즉, 중단지점이 없는 경우라면 while문의 반복으로 앞선 switch case문들이 계속 돌아가면서 타겟함수의 수행이 완료되는 것이고, 중단지점이 존재한다면 COROUTINE_SUSPENDED를 리턴 받으면서  특정 switch문까지만 진행되고 일시중지되었다가 해당 작업이 완료되면 코루틴 프레임워크에 의해 자동으로 resumeWith가 호출되면서 다시 작업이 이어지는 것입니다.
 
 
 
